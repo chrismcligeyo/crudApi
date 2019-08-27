@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Item Manager</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/united/bootstrap.min.css" rel="stylesheet" integrity="sha384-WTtvlZJeRyCiKUtbQ88X1x9uHmKi0eHCbQ8irbzqSLkE0DpAZuixT5yFvgX0CjIu" crossorigin="anonymous">
+
+</head>
+<body>
+        <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-4">
+            <a class="navbar-brand" href="#">Item Manager</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/ ">Home <span class="sr-only">(current)</span></a>
+                    </li>
+
+                </ul>
+
+            </div>
+        </nav>
+
+<!--below  is where items grabbed from our api, that is database, will be displayed-->
+        <div class="container">
+            <h1>Add item</h1>
+            <form id="itemForm">
+                <div class="form-group">
+                    <label>Text</label>
+                    <input type="text" id="text" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label>Body</label>
+                    <textarea id="body" class="form-control"></textarea>
+                </div>
+                <input type="submit" value="submit" class="btn btn-primary">
+
+            </form>
+            <hr>
+            <ul id="items" class="list-group"></ul>
+        </div>
+
+
+
+<script
+        src="https://code.jquery.com/jquery-3.4.1.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU=" crossorigin="anonymous">
+
+</script>
+
+<script type="text/javascript">
+    $(document).ready(function(){
+        getItems(); //will return an allow no access policy error in console because we are trying to fetch data(make a request) from url that we are not in. i.e fetch data(make a request) from a domain other than ours. FIX:Enable cors on server. many ways to enable cors in laravel. use package(laravel cors package). install in itemApi folder path. package link: https://github.com/barryvdh/laravel-cors. follow installation instructions in github . it works after following process
+
+        //submit event. step 2 after getting items from api and displaying in browser
+
+        $("#itemForm").on('submit', function(e){
+            e.preventDefault(); //prevent form from sebmitting. i.e its default behaviour(submit);
+
+           //get value of item entered in text input
+            let text = $("#text").val();
+            let body = $("#body").val();
+
+
+            addItem(text, body);
+        });
+
+        //step 4, delete event
+
+        $('body').on('click', '.deleteLink', function(e){// when use ("body") we are event delegating, just like e.parentelement.parent element in js. delegating because ul containing delete link is created dynamically using js. if it was created in html directly, we would have clled id directly, .$('.deleteLink').on instead of $('body')
+            e.preventDefault();
+
+            let id = $(this).data('id'); //$(this) refers to any delete link you click at a specified moment. data is the object being sent in post, id is the index(key) which is equivalent to item.id as set in delete link in get .item function
+            // console.log(id);
+            deleteItem(id);
+        });
+
+        //5 delete item through api
+        function deleteItem(id){
+            $.ajax({
+                method: "POST",
+                url: "http://itemapi.localhost/api/items/" + id,
+                data: {_method: 'DELETE'}
+
+            })
+
+                .done(function(item){// item is the json data returned.
+                    alert("Item Deleted");
+                    //reload page to same location. so that when it em added shows up in ul list
+                    location.reload();
+                });
+
+        }
+
+        //insert items using api. step 3. method POST
+
+        function addItem (text,body){
+            $.ajax({
+                method: "POST",
+                url: "http://itemapi.localhost/api/items",
+                data: {text: text, body: body}
+
+            })
+
+                .done(function(item){// item is the json data returned.
+                   alert("Item # "+item.id+" added");
+                    //reload page to same location. so that when item added shows up in ul list
+                    location.reload();
+                });
+
+        }
+
+        // Get items from api - step 1
+        function getItems(){
+            $.ajax({
+                url:"http://itemapi.localhost/api/items"
+            })
+                .done(function(items){
+                    // console.log(items); //it now fetches our object(data) from the backend(itemApi database)
+
+                    let output = "";
+
+                    $.each(items, (index, item) => {
+
+                        output += `
+
+                           <li class="list-group-item">
+
+                            <strong>${item.text}: </strong>${item.body}
+      <a href="#" class="deleteLink" data-id="${item.id}">Delete</a>
+
+                           </li>
+
+
+                        `;
+                        <!--  place the id in a data attribute (data-id="") so that it can be accessed in delete event above-->
+                    });
+                    //append li to ul
+                    $("#items").append(output);
+
+                });
+        }
+
+    });
+</script>
+</body>
+</html>
